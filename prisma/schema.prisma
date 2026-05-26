@@ -23,17 +23,20 @@ model Locality {
 }
 
 model FanLog {
-  id         BigInt    @id @default(autoincrement())
-  localityId BigInt    @map("locality_id")
-  pseudo     String    @db.VarChar(80)
-  anecdote   String?
-  remark     String?
-  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  locality   Locality  @relation(fields: [localityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id            BigInt    @id @default(autoincrement())
+  localityId    BigInt    @map("locality_id")
+  pseudo        String    @db.VarChar(80)
+  anecdote      String?
+  remark        String?
+  ipHash        String    @map("ip_hash") @db.Char(64)
+  userAgentHash String    @map("user_agent_hash") @db.Char(64)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  locality      Locality  @relation(fields: [localityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([localityId])
   @@index([createdAt])
   @@index([localityId, createdAt])
+  @@index([localityId, ipHash, userAgentHash, createdAt])
   @@map("fan_logs")
 }
 
