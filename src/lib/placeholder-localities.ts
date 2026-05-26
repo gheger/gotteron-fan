@@ -1,14 +1,24 @@
-import type { FeatureCollection, Point } from "geojson";
+import type { FeatureCollection, Point, Polygon } from "geojson";
 
 export type Locality = {
   id: string;
   name: string;
   canton: string;
   coordinates: [number, number];
+  polygon: [number, number][];
   fanCount: number;
   blurb: string;
   latestPseudo: string;
 };
+
+type LocalityFeatureProperties = {
+  id: string;
+  name: string;
+  canton: string;
+  fanCount: number;
+};
+
+export const fribourgMapCenter: [number, number] = [7.152, 46.7908];
 
 export const placeholderLocalities: Locality[] = [
   {
@@ -16,6 +26,13 @@ export const placeholderLocalities: Locality[] = [
     name: "Fribourg",
     canton: "FR",
     coordinates: [7.16197, 46.80648],
+    polygon: [
+      [7.1105, 46.8395],
+      [7.2205, 46.8395],
+      [7.2205, 46.7715],
+      [7.1105, 46.7715],
+      [7.1105, 46.8395],
+    ],
     fanCount: 184,
     blurb: "A dense supporter pocket around the city and university quarter.",
     latestPseudo: "Bichette74",
@@ -25,6 +42,13 @@ export const placeholderLocalities: Locality[] = [
     name: "Bulle",
     canton: "FR",
     coordinates: [7.05722, 46.61996],
+    polygon: [
+      [7.006, 46.654],
+      [7.113, 46.654],
+      [7.113, 46.583],
+      [7.006, 46.583],
+      [7.006, 46.654],
+    ],
     fanCount: 121,
     blurb: "Strong Gruyere turnout with regular away-trip chatter.",
     latestPseudo: "LaGruyereRouge",
@@ -34,6 +58,13 @@ export const placeholderLocalities: Locality[] = [
     name: "Morat",
     canton: "FR",
     coordinates: [7.11783, 46.92827],
+    polygon: [
+      [7.062, 46.963],
+      [7.169, 46.963],
+      [7.169, 46.889],
+      [7.062, 46.889],
+      [7.062, 46.963],
+    ],
     fanCount: 67,
     blurb: "A smaller cluster, but active and consistently present.",
     latestPseudo: "SeeFan",
@@ -43,20 +74,22 @@ export const placeholderLocalities: Locality[] = [
     name: "Romont",
     canton: "FR",
     coordinates: [6.91181, 46.69709],
+    polygon: [
+      [6.859, 46.732],
+      [6.969, 46.732],
+      [6.969, 46.661],
+      [6.859, 46.661],
+      [6.859, 46.732],
+    ],
     fanCount: 53,
     blurb: "Growing fan base along the rail line into Fribourg.",
     latestPseudo: "DragonDuRail",
   },
 ];
 
-export const placeholderLocalityCollection: FeatureCollection<
+export const placeholderLocalityCenterCollection: FeatureCollection<
   Point,
-  {
-    id: string;
-    name: string;
-    canton: string;
-    fanCount: number;
-  }
+  LocalityFeatureProperties
 > = {
   type: "FeatureCollection",
   features: placeholderLocalities.map((locality) => ({
@@ -70,6 +103,26 @@ export const placeholderLocalityCollection: FeatureCollection<
     geometry: {
       type: "Point",
       coordinates: locality.coordinates,
+    },
+  })),
+};
+
+export const placeholderLocalityPolygonCollection: FeatureCollection<
+  Polygon,
+  LocalityFeatureProperties
+> = {
+  type: "FeatureCollection",
+  features: placeholderLocalities.map((locality) => ({
+    type: "Feature",
+    properties: {
+      id: locality.id,
+      name: locality.name,
+      canton: locality.canton,
+      fanCount: locality.fanCount,
+    },
+    geometry: {
+      type: "Polygon",
+      coordinates: [locality.polygon],
     },
   })),
 };

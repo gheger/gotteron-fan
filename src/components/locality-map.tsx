@@ -4,11 +4,13 @@ import { useEffect, useRef } from "react";
 import maplibregl, { type Map } from "maplibre-gl";
 import {
   placeholderLocalities,
-  placeholderLocalityCollection,
+  placeholderLocalityCenterCollection,
+  placeholderLocalityPolygonCollection,
+  fribourgMapCenter,
 } from "@/lib/placeholder-localities";
 
 type LocalityMapProps = {
-  selectedLocalityId: string;
+  selectedLocalityId: string | null;
   onSelectLocality: (localityId: string) => void;
 };
 
@@ -29,8 +31,8 @@ export function LocalityMap({
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: mapStyle,
-      center: [7.153, 46.792],
-      zoom: 9,
+      center: fribourgMapCenter,
+      zoom: 8.65,
       attributionControl: false,
     });
 
@@ -39,48 +41,92 @@ export function LocalityMap({
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
 
     map.on("load", () => {
-      map.addSource("localities", {
+      map.addSource("locality-polygons", {
         type: "geojson",
-        data: placeholderLocalityCollection,
+        data: placeholderLocalityPolygonCollection,
       });
 
       map.addLayer({
-        id: "locality-glow",
-        type: "circle",
-        source: "localities",
+        id: "locality-fill",
+        type: "fill",
+        source: "locality-polygons",
         paint: {
-          "circle-radius": ["+", ["interpolate", ["linear"], ["get", "fanCount"], 40, 12, 200, 18], 10],
-          "circle-color": "rgba(185, 28, 28, 0.18)",
-          "circle-blur": 0.6,
+          "fill-color": [
+            "case",
+            ["==", ["get", "id"], selectedLocalityId ?? ""],
+            "rgba(185, 28, 28, 0.62)",
+            "rgba(23, 37, 84, 0.28)",
+          ],
+          "fill-outline-color": "rgba(255,255,255,0.0)",
+          "fill-opacity": [
+            "case",
+            ["==", ["get", "id"], selectedLocalityId ?? ""],
+            0.72,
+            0.46,
+          ],
         },
       });
 
       map.addLayer({
-        id: "locality-bubbles",
-        type: "circle",
-        source: "localities",
+        id: "locality-outline",
+        type: "line",
+        source: "locality-polygons",
         paint: {
-          "circle-radius": ["interpolate", ["linear"], ["get", "fanCount"], 40, 8, 200, 16],
-          "circle-color": [
+          "line-color": [
             "case",
-            ["==", ["get", "id"], selectedLocalityId],
-            "#b91c1c",
-            "#172554",
+            ["==", ["get", "id"], selectedLocalityId ?? ""],
+            "rgba(255,255,255,0.96)",
+            "rgba(15,23,42,0.55)",
           ],
-          "circle-stroke-width": ["case", ["==", ["get", "id"], selectedLocalityId], 3, 1.5],
-          "circle-stroke-color": "rgba(255,255,255,0.94)",
+          "line-width": [
+            "case",
+            ["==", ["get", "id"], selectedLocalityId ?? ""],
+            3,
+            1.6,
+          ],
+        },
+      });
+
+      map.addSource("locality-centers", {
+        type: "geojson",
+        data: placeholderLocalityCenterCollection,
+      });
+
+      map.addLayer({
+        id: "locality-count-badges",
+        type: "circle",
+        source: "locality-centers",
+        paint: {
+          "circle-radius": 18,
+          "circle-color": "rgba(255,255,255,0.92)",
+          "circle-stroke-width": 1.5,
+          "circle-stroke-color": "rgba(15,23,42,0.14)",
+        },
+      });
+
+      map.addLayer({
+        id: "locality-count-labels",
+        type: "symbol",
+        source: "locality-centers",
+        layout: {
+          "text-field": ["to-string", ["get", "fanCount"]],
+          "text-font": ["Open Sans Bold"],
+          "text-size": 12,
+        },
+        paint: {
+          "text-color": "#0f172a",
         },
       });
 
       map.addLayer({
         id: "locality-labels",
         type: "symbol",
-        source: "localities",
+        source: "locality-centers",
         layout: {
           "text-field": ["get", "name"],
           "text-font": ["Open Sans SemiBold"],
           "text-size": 12,
-          "text-offset": [0, 1.5],
+          "text-offset": [0, 2.1],
           "text-anchor": "top",
         },
         paint: {
@@ -90,7 +136,7 @@ export function LocalityMap({
         },
       });
 
-      map.on("click", "locality-bubbles", (event) => {
+      map.on("click", "locality-fill", (event) => {
         const feature = event.features?.[0];
         const localityId = feature?.properties?.id;
 
@@ -99,11 +145,11 @@ export function LocalityMap({
         }
       });
 
-      map.on("mouseenter", "locality-bubbles", () => {
+      map.on("mouseenter", "locality-fill", () => {
         map.getCanvas().style.cursor = "pointer";
       });
 
-      map.on("mouseleave", "locality-bubbles", () => {
+      map.on("mouseleave", "locality-fill", () => {
         map.getCanvas().style.cursor = "";
       });
     });
@@ -121,17 +167,31 @@ export function LocalityMap({
       return;
     }
 
-    map.setPaintProperty("locality-bubbles", "circle-color", [
+    const activeLocalityId = selectedLocalityId ?? "";
+
+    map.setPaintProperty("locality-fill", "fill-color", [
       "case",
-      ["==", ["get", "id"], selectedLocalityId],
-      "#b91c1c",
-      "#172554",
+      ["==", ["get", "id"], activeLocalityId],
+      "rgba(185, 28, 28, 0.62)",
+      "rgba(23, 37, 84, 0.28)",
     ]);
-    map.setPaintProperty("locality-bubbles", "circle-stroke-width", [
+    map.setPaintProperty("locality-fill", "fill-opacity", [
       "case",
-      ["==", ["get", "id"], selectedLocalityId],
+      ["==", ["get", "id"], activeLocalityId],
+      0.72,
+      0.46,
+    ]);
+    map.setPaintProperty("locality-outline", "line-color", [
+      "case",
+      ["==", ["get", "id"], activeLocalityId],
+      "rgba(255,255,255,0.96)",
+      "rgba(15,23,42,0.55)",
+    ]);
+    map.setPaintProperty("locality-outline", "line-width", [
+      "case",
+      ["==", ["get", "id"], activeLocalityId],
       3,
-      1.5,
+      1.6,
     ]);
 
     const selectedLocality = placeholderLocalities.find(
@@ -169,8 +229,8 @@ export function LocalityMap({
     <div className="relative h-full min-h-[22rem] w-full">
       <div ref={containerRef} className="h-full min-h-[22rem] w-full" />
       <div className="pointer-events-none absolute inset-x-4 bottom-4 rounded-2xl border border-white/60 bg-white/78 px-4 py-3 text-sm text-slate-700 shadow-[0_14px_32px_rgba(15,23,42,0.14)] backdrop-blur">
-        Click a locality bubble to inspect aggregated supporter totals and try the
-        placeholder fan log form.
+        Click a locality polygon to select it, inspect its placeholder supporter
+        count, and open the side panel.
       </div>
     </div>
   );

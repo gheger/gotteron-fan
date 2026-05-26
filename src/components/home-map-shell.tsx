@@ -8,13 +8,20 @@ import { LocalityPanel } from "@/components/locality-panel";
 import { placeholderLocalities } from "@/lib/placeholder-localities";
 
 export function HomeMapShell() {
-  const [selectedLocalityId, setSelectedLocalityId] = useState(
-    placeholderLocalities[0]?.id ?? "",
-  );
+  const [selectedLocalityId, setSelectedLocalityId] = useState<string | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const selectedLocality =
-    placeholderLocalities.find((locality) => locality.id === selectedLocalityId) ??
-    placeholderLocalities[0];
+    placeholderLocalities.find((locality) => locality.id === selectedLocalityId) ?? null;
+
+  function handleSelectLocality(localityId: string) {
+    setSelectedLocalityId(localityId);
+    setIsPanelOpen(true);
+  }
+
+  function handleClosePanel() {
+    setIsPanelOpen(false);
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -41,13 +48,17 @@ export function HomeMapShell() {
             </div>
 
             <LocalityMap
-              selectedLocalityId={selectedLocality.id}
-              onSelectLocality={setSelectedLocalityId}
+              selectedLocalityId={selectedLocality?.id ?? null}
+              onSelectLocality={handleSelectLocality}
             />
           </div>
 
-          <LocalityPanel locality={selectedLocality}>
-            <FanLogForm localityName={selectedLocality.name} />
+          <LocalityPanel
+            className={isPanelOpen ? "flex" : "hidden lg:flex"}
+            locality={selectedLocality}
+            onClose={handleClosePanel}
+          >
+            {selectedLocality ? <FanLogForm localityName={selectedLocality.name} /> : null}
           </LocalityPanel>
         </section>
       </div>
