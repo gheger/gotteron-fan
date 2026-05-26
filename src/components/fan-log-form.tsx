@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TurnstileWidget } from "@/components/turnstile-widget";
 
 type FanLogFormProps = {
   localityId: string;
@@ -43,6 +44,7 @@ export function FanLogForm({ localityId, localityName, onSuccess }: FanLogFormPr
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   function updateField(field: keyof FormState, value: string) {
     setFormState((currentState) => ({
@@ -81,7 +83,9 @@ export function FanLogForm({ localityId, localityName, onSuccess }: FanLogFormPr
       nextErrors.remark = "Remark must be 2000 characters or fewer.";
     }
 
-    if (!formState.captchaToken.trim()) {
+    if (!turnstileSiteKey) {
+      nextErrors.captchaToken = "NEXT_PUBLIC_TURNSTILE_SITE_KEY is missing.";
+    } else if (!formState.captchaToken.trim()) {
       nextErrors.captchaToken = "Captcha token is required until the Turnstile widget is wired.";
     }
 
@@ -257,19 +261,13 @@ export function FanLogForm({ localityId, localityName, onSuccess }: FanLogFormPr
         </label>
 
         <label className="flex flex-col gap-2 text-sm text-slate-700">
-          <span className="font-medium">Captcha Token</span>
-          <input
-            value={formState.captchaToken}
-            onChange={(event) => updateField("captchaToken", event.target.value)}
-            placeholder="Temporary until Turnstile widget is wired"
-            aria-invalid={Boolean(fieldErrors.captchaToken)}
+          <span className="font-medium">Captcha</span>
+          <TurnstileWidget
+            siteKey={turnstileSiteKey}
+            onTokenChange={(token) => updateField("captchaToken", token)}
             disabled={isSubmitting}
-            className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-accent focus:ring-4 focus:ring-accent-soft disabled:cursor-not-allowed disabled:bg-slate-100"
           />
-          <span className="text-xs leading-5 text-slate-500">
-            This temporary field exists only until the real Cloudflare Turnstile widget is
-            mounted in the form.
-          </span>
+          <input type="hidden" value={formState.captchaToken} readOnly />
           {fieldErrors.captchaToken ? (
             <span className="text-sm text-red-600">{fieldErrors.captchaToken}</span>
           ) : null}
