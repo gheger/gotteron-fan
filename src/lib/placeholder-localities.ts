@@ -87,42 +87,52 @@ export const placeholderLocalities: Locality[] = [
   },
 ];
 
-export const placeholderLocalityCenterCollection: FeatureCollection<
-  Point,
-  LocalityFeatureProperties
-> = {
-  type: "FeatureCollection",
-  features: placeholderLocalities.map((locality) => ({
-    type: "Feature",
-    properties: {
-      id: locality.id,
-      name: locality.name,
-      canton: locality.canton,
-      fanCount: locality.fanCount,
-    },
-    geometry: {
-      type: "Point",
-      coordinates: locality.coordinates,
-    },
-  })),
-};
+export function buildLocalityCenterCollection(
+  localities: Locality[],
+): FeatureCollection<Point, LocalityFeatureProperties> {
+  return {
+    type: "FeatureCollection",
+    features: localities.map((locality) => ({
+      type: "Feature",
+      properties: {
+        id: locality.id,
+        name: locality.name,
+        canton: locality.canton,
+        fanCount: locality.fanCount,
+      },
+      geometry: {
+        type: "Point",
+        coordinates: locality.coordinates,
+      },
+    })),
+  };
+}
 
-export const placeholderLocalityPolygonCollection: FeatureCollection<
-  Polygon,
-  LocalityFeatureProperties
-> = {
-  type: "FeatureCollection",
-  features: placeholderLocalities.map((locality) => ({
-    type: "Feature",
-    properties: {
-      id: locality.id,
-      name: locality.name,
-      canton: locality.canton,
-      fanCount: locality.fanCount,
-    },
-    geometry: {
-      type: "Polygon",
-      coordinates: [locality.polygon],
-    },
-  })),
-};
+export function buildLocalityPolygonCollection(
+  localities: Locality[],
+): FeatureCollection<Polygon, LocalityFeatureProperties> {
+  return {
+    type: "FeatureCollection",
+    features: localities.map((locality) => ({
+      type: "Feature",
+      properties: {
+        id: locality.id,
+        name: locality.name,
+        canton: locality.canton,
+        fanCount: locality.fanCount,
+      },
+      geometry: {
+        type: "Polygon",
+        coordinates: [locality.polygon],
+      },
+    })),
+  };
+}
+
+export const placeholderLocalityCenterCollection = buildLocalityCenterCollection(
+  placeholderLocalities,
+);
+
+export const placeholderLocalityPolygonCollection = buildLocalityPolygonCollection(
+  placeholderLocalities,
+);

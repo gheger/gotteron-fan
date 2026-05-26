@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import maplibregl, { type Map } from "maplibre-gl";
+import maplibregl, { type GeoJSONSource, type Map } from "maplibre-gl";
 import {
-  placeholderLocalities,
-  placeholderLocalityCenterCollection,
-  placeholderLocalityPolygonCollection,
+  buildLocalityCenterCollection,
+  buildLocalityPolygonCollection,
   fribourgMapCenter,
+  type Locality,
 } from "@/lib/placeholder-localities";
 
 type LocalityMapProps = {
+  localities: Locality[];
   selectedLocalityId: string | null;
   onSelectLocality: (localityId: string) => void;
 };
@@ -17,6 +18,7 @@ type LocalityMapProps = {
 const mapStyle = "https://demotiles.maplibre.org/style.json";
 
 export function LocalityMap({
+  localities,
   selectedLocalityId,
   onSelectLocality,
 }: LocalityMapProps) {
@@ -43,7 +45,7 @@ export function LocalityMap({
     map.on("load", () => {
       map.addSource("locality-polygons", {
         type: "geojson",
-        data: placeholderLocalityPolygonCollection,
+        data: buildLocalityPolygonCollection(localities),
       });
 
       map.addLayer({
@@ -89,7 +91,7 @@ export function LocalityMap({
 
       map.addSource("locality-centers", {
         type: "geojson",
-        data: placeholderLocalityCenterCollection,
+        data: buildLocalityCenterCollection(localities),
       });
 
       map.addLayer({
@@ -158,7 +160,21 @@ export function LocalityMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [onSelectLocality, selectedLocalityId]);
+  }, [localities, onSelectLocality, selectedLocalityId]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (!map || !map.isStyleLoaded()) {
+      return;
+    }
+
+    const polygonSource = map.getSource("locality-polygons") as GeoJSONSource | undefined;
+    const centerSource = map.getSource("locality-centers") as GeoJSONSource | undefined;
+
+    polygonSource?.setData(buildLocalityPolygonCollection(localities));
+    centerSource?.setData(buildLocalityCenterCollection(localities));
+  }, [localities]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -194,7 +210,7 @@ export function LocalityMap({
       1.6,
     ]);
 
-    const selectedLocality = placeholderLocalities.find(
+    const selectedLocality = localities.find(
       (locality) => locality.id === selectedLocalityId,
     );
 
@@ -208,7 +224,7 @@ export function LocalityMap({
       duration: 900,
       essential: true,
     });
-  }, [selectedLocalityId]);
+  }, [localities, selectedLocalityId]);
 
   useEffect(() => {
     const map = mapRef.current;

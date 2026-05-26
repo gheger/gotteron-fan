@@ -8,15 +8,34 @@ import { LocalityPanel } from "@/components/locality-panel";
 import { placeholderLocalities } from "@/lib/placeholder-localities";
 
 export function HomeMapShell() {
+  const [localities, setLocalities] = useState(() => placeholderLocalities);
   const [selectedLocalityId, setSelectedLocalityId] = useState<string | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const selectedLocality =
-    placeholderLocalities.find((locality) => locality.id === selectedLocalityId) ?? null;
+    localities.find((locality) => locality.id === selectedLocalityId) ?? null;
 
   function handleSelectLocality(localityId: string) {
     setSelectedLocalityId(localityId);
     setIsPanelOpen(true);
+  }
+
+  function handleFanLogSubmitted(updatedFanCount: number, pseudo: string) {
+    if (!selectedLocalityId) {
+      return;
+    }
+
+    setLocalities((currentLocalities) =>
+      currentLocalities.map((locality) =>
+        locality.id === selectedLocalityId
+          ? {
+              ...locality,
+              fanCount: updatedFanCount,
+              latestPseudo: pseudo,
+            }
+          : locality,
+      ),
+    );
   }
 
   function handleClosePanel() {
@@ -48,6 +67,7 @@ export function HomeMapShell() {
             </div>
 
             <LocalityMap
+              localities={localities}
               selectedLocalityId={selectedLocality?.id ?? null}
               onSelectLocality={handleSelectLocality}
             />
@@ -58,7 +78,14 @@ export function HomeMapShell() {
             locality={selectedLocality}
             onClose={handleClosePanel}
           >
-            {selectedLocality ? <FanLogForm localityName={selectedLocality.name} /> : null}
+            {selectedLocality ? (
+              <FanLogForm
+                key={selectedLocality.id}
+                localityId={selectedLocality.id}
+                localityName={selectedLocality.name}
+                onSuccess={handleFanLogSubmitted}
+              />
+            ) : null}
           </LocalityPanel>
         </section>
       </div>
