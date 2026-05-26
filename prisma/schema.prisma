@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Locality {
+  id         BigInt                              @id @default(autoincrement())
+  name       String
+  cantonCode String                              @map("canton_code") @db.VarChar(2)
+  geom       Unsupported("geometry(MultiPolygon, 4326)")
+  createdAt  DateTime                            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime                            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  fanLogs    FanLog[]
+  fanCount   LocalityFanCount?
+
+  @@unique([name, cantonCode])
+  @@index([cantonCode])
+  @@index([name])
+  @@map("localities")
+}
+
+model FanLog {
+  id         BigInt    @id @default(autoincrement())
+  localityId BigInt    @map("locality_id")
+  pseudo     String    @db.VarChar(80)
+  anecdote   String?
+  remark     String?
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  locality   Locality  @relation(fields: [localityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([localityId])
+  @@index([createdAt])
+  @@index([localityId, createdAt])
+  @@map("fan_logs")
+}
+
+model LocalityFanCount {
+  localityId BigInt    @id @map("locality_id")
+  fanCount   Int       @default(0) @map("fan_count")
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  locality   Locality  @relation(fields: [localityId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([fanCount])
+  @@map("locality_fan_counts")
+}
