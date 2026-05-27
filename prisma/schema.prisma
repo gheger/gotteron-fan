@@ -8,6 +8,7 @@ datasource db {
 
 model Locality {
   id         BigInt                              @id @default(autoincrement())
+  officialId String                              @unique @map("official_id") @db.VarChar(60)
   name       String
   cantonCode String                              @map("canton_code") @db.VarChar(2)
   geom       Unsupported("geometry(MultiPolygon, 4326)")

@@ -48,8 +48,12 @@ export function FanLogForm({ localityId, localityName, onSuccess }: FanLogFormPr
 
   function updateField(field: keyof FormState, value: string) {
     setFormState((currentState) => ({
-      ...currentState,
-      [field]: value,
+      ...(currentState[field] === value
+        ? currentState
+        : {
+            ...currentState,
+            [field]: value,
+          }),
     }));
 
     setFieldErrors((currentErrors) => {

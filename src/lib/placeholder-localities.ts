@@ -1,11 +1,20 @@
-import type { FeatureCollection, Point, Polygon } from "geojson";
+import type {
+  FeatureCollection,
+  GeoJsonProperties,
+  MultiPolygon,
+  Point,
+  Polygon,
+} from "geojson";
+
+export type LocalityGeometry = Polygon | MultiPolygon;
 
 export type Locality = {
   id: string;
+  officialId?: string;
   name: string;
   canton: string;
   coordinates: [number, number];
-  polygon: [number, number][];
+  geometry: LocalityGeometry | null;
   fanCount: number;
   blurb: string;
   latestPseudo: string;
@@ -20,19 +29,20 @@ type LocalityFeatureProperties = {
 
 export const fribourgMapCenter: [number, number] = [7.152, 46.7908];
 
+export const officialLocalityFeatureIds = {
+  fribourg: "916",
+  bulle: "803",
+  morat: "1927",
+  romont: "867",
+} as const;
+
 export const placeholderLocalities: Locality[] = [
   {
     id: "fribourg",
     name: "Fribourg",
     canton: "FR",
     coordinates: [7.16197, 46.80648],
-    polygon: [
-      [7.1105, 46.8395],
-      [7.2205, 46.8395],
-      [7.2205, 46.7715],
-      [7.1105, 46.7715],
-      [7.1105, 46.8395],
-    ],
+    geometry: null,
     fanCount: 184,
     blurb: "A dense supporter pocket around the city and university quarter.",
     latestPseudo: "Bichette74",
@@ -42,13 +52,7 @@ export const placeholderLocalities: Locality[] = [
     name: "Bulle",
     canton: "FR",
     coordinates: [7.05722, 46.61996],
-    polygon: [
-      [7.006, 46.654],
-      [7.113, 46.654],
-      [7.113, 46.583],
-      [7.006, 46.583],
-      [7.006, 46.654],
-    ],
+    geometry: null,
     fanCount: 121,
     blurb: "Strong Gruyere turnout with regular away-trip chatter.",
     latestPseudo: "LaGruyereRouge",
@@ -58,13 +62,7 @@ export const placeholderLocalities: Locality[] = [
     name: "Morat",
     canton: "FR",
     coordinates: [7.11783, 46.92827],
-    polygon: [
-      [7.062, 46.963],
-      [7.169, 46.963],
-      [7.169, 46.889],
-      [7.062, 46.889],
-      [7.062, 46.963],
-    ],
+    geometry: null,
     fanCount: 67,
     blurb: "A smaller cluster, but active and consistently present.",
     latestPseudo: "SeeFan",
@@ -74,13 +72,7 @@ export const placeholderLocalities: Locality[] = [
     name: "Romont",
     canton: "FR",
     coordinates: [6.91181, 46.69709],
-    polygon: [
-      [6.859, 46.732],
-      [6.969, 46.732],
-      [6.969, 46.661],
-      [6.859, 46.661],
-      [6.859, 46.732],
-    ],
+    geometry: null,
     fanCount: 53,
     blurb: "Growing fan base along the rail line into Fribourg.",
     latestPseudo: "DragonDuRail",
@@ -110,23 +102,71 @@ export function buildLocalityCenterCollection(
 
 export function buildLocalityPolygonCollection(
   localities: Locality[],
-): FeatureCollection<Polygon, LocalityFeatureProperties> {
+): FeatureCollection<LocalityGeometry, LocalityFeatureProperties> {
   return {
     type: "FeatureCollection",
-    features: localities.map((locality) => ({
-      type: "Feature",
-      properties: {
-        id: locality.id,
-        name: locality.name,
-        canton: locality.canton,
-        fanCount: locality.fanCount,
-      },
-      geometry: {
-        type: "Polygon",
-        coordinates: [locality.polygon],
-      },
-    })),
+    features: localities.flatMap((locality) => {
+      if (!locality.geometry) {
+        return [];
+      }
+
+      return [
+        {
+          type: "Feature",
+          properties: {
+            id: locality.id,
+            name: locality.name,
+            canton: locality.canton,
+            fanCount: locality.fanCount,
+          },
+          geometry: locality.geometry,
+        },
+      ];
+    }),
   };
+}
+
+type OfficialLocalityFeatureResponse = {
+  feature: {
+    geometry: LocalityGeometry;
+    bbox?: [number, number, number, number];
+    properties?: GeoJsonProperties;
+  };
+};
+
+export async function fetchOfficialLocalityGeometry(
+  featureId: string,
+): Promise<OfficialLocalityFeatureResponse> {
+  const response = await fetch(
+    `https://api3.geo.admin.ch/rest/services/ech/MapServer/ch.swisstopo-vd.ortschaftenverzeichnis_plz/${featureId}?sr=4326&geometryFormat=geojson`,
+    {
+      cache: "force-cache",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`Unable to load official locality geometry (${featureId}).`);
+  }
+
+  return (await response.json()) as OfficialLocalityFeatureResponse;
+}
+
+export async function buildOfficialFallbackLocalities(): Promise<Locality[]> {
+  const localityIds = [
+    officialLocalityFeatureIds.fribourg,
+    officialLocalityFeatureIds.bulle,
+    officialLocalityFeatureIds.morat,
+    officialLocalityFeatureIds.romont,
+  ];
+  const officialGeometries = await Promise.all(
+    localityIds.map((featureId) => fetchOfficialLocalityGeometry(featureId)),
+  );
+
+  return placeholderLocalities.map((locality, index) => ({
+    ...locality,
+    geometry: officialGeometries[index]?.feature.geometry ?? locality.geometry,
+    officialId: localityIds[index],
+  }));
 }
 
 export const placeholderLocalityCenterCollection = buildLocalityCenterCollection(

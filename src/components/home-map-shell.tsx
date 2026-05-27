@@ -5,15 +5,20 @@ import { FanLogForm } from "@/components/fan-log-form";
 import { HeaderBrand } from "@/components/header-brand";
 import { LocalityMap } from "@/components/locality-map";
 import { LocalityPanel } from "@/components/locality-panel";
-import { placeholderLocalities } from "@/lib/placeholder-localities";
+import { type Locality } from "@/lib/placeholder-localities";
 
-export function HomeMapShell() {
-  const [localities, setLocalities] = useState(() => placeholderLocalities);
+type HomeMapShellProps = {
+  initialLocalities: Locality[];
+};
+
+export function HomeMapShell({ initialLocalities }: HomeMapShellProps) {
+  const [localities, setLocalities] = useState(initialLocalities);
   const [selectedLocalityId, setSelectedLocalityId] = useState<string | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const selectedLocality =
     localities.find((locality) => locality.id === selectedLocalityId) ?? null;
+  const canSubmitFanLog = Boolean(selectedLocality && /^\d+$/.test(selectedLocality.id));
 
   function handleSelectLocality(localityId: string) {
     setSelectedLocalityId(localityId);
@@ -57,8 +62,8 @@ export function HomeMapShell() {
                   fan map
                 </p>
                 <p className="text-sm text-white/80">
-                  Placeholder localities around Fribourg while the real geodata and
-                  fan logs are still offline.
+                  Official swisstopo locality perimeters around Fribourg with
+                  placeholder supporter counts until the database-backed map is wired.
                 </p>
               </div>
               <div className="ml-auto rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.22em] text-white/80">
@@ -79,12 +84,19 @@ export function HomeMapShell() {
             onClose={handleClosePanel}
           >
             {selectedLocality ? (
-              <FanLogForm
-                key={selectedLocality.id}
-                localityId={selectedLocality.id}
-                localityName={selectedLocality.name}
-                onSuccess={handleFanLogSubmitted}
-              />
+              canSubmitFanLog ? (
+                <FanLogForm
+                  key={selectedLocality.id}
+                  localityId={selectedLocality.id}
+                  localityName={selectedLocality.name}
+                  onSuccess={handleFanLogSubmitted}
+                />
+              ) : (
+                <div className="mt-6 rounded-[1.75rem] border border-border bg-white/72 p-5 text-sm leading-6 text-slate-700">
+                  Fan log submission is disabled until the official locality import has
+                  been loaded into PostGIS for this environment.
+                </div>
+              )
             ) : null}
           </LocalityPanel>
         </section>

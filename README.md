@@ -18,12 +18,13 @@ Implemented:
 - hashed IP and user-agent handling for privacy-preserving rate limiting
 - Prisma schema plus raw SQL PostGIS migrations
 - PostgreSQL/PostGIS local development with Docker Compose
+- official swisstopo locality import into PostGIS for the map dataset
+- swisstopo raster basemap plus DB-backed official locality perimeters on the homepage
 
 Current limitations:
 
-- the map still uses demo locality polygons and counts in the frontend
 - the real Cloudflare Turnstile widget now exists in the UI, but you still need valid site and secret keys in local env to submit successfully
-- official Swiss locality geodata is not wired yet
+- the homepage currently renders the Fribourg canton slice from the imported Swiss locality dataset
 
 ## Stack
 
@@ -86,7 +87,15 @@ npm run db:migrate
 npm run prisma:generate
 ```
 
-### 6. Start the app
+### 6. Import official localities into PostGIS
+
+```bash
+npm run db:import-localities
+```
+
+This downloads the official swisstopo locality shapefile, resolves Swiss canton codes, and upserts the locality geometry into `localities`.
+
+### 7. Start the app
 
 ```bash
 npm run dev
@@ -105,6 +114,7 @@ npm run prisma:generate
 npm run db:up
 npm run db:down
 npm run db:migrate
+npm run db:import-localities
 ```
 
 ## Database Overview
@@ -112,7 +122,8 @@ npm run db:migrate
 The schema currently includes:
 
 - `localities`
-	- locality identity data
+	- official swisstopo locality identity data
+	- `official_id` for stable re-imports
 	- `geom geometry(MultiPolygon, 4326)` in PostGIS
 - `fan_logs`
 	- references `localities`
@@ -181,7 +192,5 @@ prisma/
 
 ## Next Steps
 
-- wire official Swiss locality geodata into the map
-- replace demo locality polygons with real locality geometry and counts
-- seed the database with real locality records
 - run a real end-to-end submission test with valid Turnstile credentials
+- expose locality slices beyond Fribourg once the broader fan-map UX is ready

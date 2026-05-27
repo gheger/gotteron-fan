@@ -26,15 +26,15 @@ export function LocalityPanel({
           pick a zone
         </h2>
         <p className="mt-4 rounded-2xl border border-border bg-white/72 px-4 py-4 text-sm leading-6 text-slate-700">
-          Click a placeholder locality polygon on the Fribourg map to open the side
-          panel with its supporter total and the draft fan log form.
+          Click a locality perimeter on the Fribourg map to open the side panel with
+          its supporter total and fan log form.
         </p>
         <div className="mt-5 grid gap-3 text-sm text-slate-700">
           <div className="rounded-2xl border border-border bg-white/70 px-4 py-3">
             Aggregation stays at locality level only.
           </div>
           <div className="rounded-2xl border border-border bg-white/70 px-4 py-3">
-            The current polygons are placeholders until Swiss official geodata is wired.
+            Official swisstopo locality geometry is used for the map.
           </div>
         </div>
       </aside>
@@ -89,7 +89,7 @@ export function LocalityPanel({
           <dt className="text-xs uppercase tracking-[0.18em] text-slate-500">
             status
           </dt>
-          <dd className="mt-2 font-semibold text-slate-900">placeholder data</dd>
+          <dd className="mt-2 font-semibold text-slate-900">official perimeter</dd>
         </div>
       </dl>
 

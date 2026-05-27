@@ -11,7 +11,8 @@
     "prisma:validate": "prisma validate",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "db:migrate": "prisma migrate deploy"
+    "db:migrate": "prisma migrate deploy",
+    "db:import-localities": "node --env-file=.env scripts/import-official-localities.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
@@ -19,8 +20,10 @@
     "maplibre-gl": "^5.24.0",
     "next": "16.2.6",
     "pg": "^8.21.0",
+    "proj4": "^2.20.8",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "shapefile": "^0.6.6",
     "zod": "^4.4.3"
   },
   "devDependencies": {

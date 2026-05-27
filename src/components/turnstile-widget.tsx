@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useEffectEvent, useId, useRef } from "react";
 
 declare global {
   interface Window {
@@ -35,6 +35,9 @@ export function TurnstileWidget({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
   const elementId = useId();
+  const emitTokenChange = useEffectEvent((token: string) => {
+    onTokenChange(token);
+  });
 
   useEffect(() => {
     if (!siteKey || !containerRef.current || !window.turnstile || widgetIdRef.current) {
@@ -44,13 +47,13 @@ export function TurnstileWidget({
     widgetIdRef.current = window.turnstile.render(containerRef.current, {
       sitekey: siteKey,
       callback: (token) => {
-        onTokenChange(token);
+        emitTokenChange(token);
       },
       "expired-callback": () => {
-        onTokenChange("");
+        emitTokenChange("");
       },
       "error-callback": () => {
-        onTokenChange("");
+        emitTokenChange("");
       },
     });
 
@@ -60,7 +63,7 @@ export function TurnstileWidget({
         widgetIdRef.current = null;
       }
     };
-  }, [onTokenChange, siteKey]);
+  }, [siteKey]);
 
   useEffect(() => {
     if (!window.turnstile || !widgetIdRef.current) {
@@ -69,9 +72,9 @@ export function TurnstileWidget({
 
     if (disabled) {
       window.turnstile.reset(widgetIdRef.current);
-      onTokenChange("");
+      emitTokenChange("");
     }
-  }, [disabled, onTokenChange]);
+  }, [disabled]);
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-3">
