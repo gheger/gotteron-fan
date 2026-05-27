@@ -109,6 +109,14 @@ export function LocalityMap({
             0.88,
             0.62,
           ],
+          "fill-color-transition": {
+            duration: 0,
+            delay: 0,
+          },
+          "fill-opacity-transition": {
+            duration: 0,
+            delay: 0,
+          },
         },
       });
 
@@ -129,6 +137,14 @@ export function LocalityMap({
             3.8,
             2.2,
           ],
+          "line-color-transition": {
+            duration: 0,
+            delay: 0,
+          },
+          "line-width-transition": {
+            duration: 0,
+            delay: 0,
+          },
         },
       });
 
@@ -172,7 +188,19 @@ export function LocalityMap({
         layout: {
           "text-field": ["get", "name"],
           "text-font": ["Noto Sans Regular"],
-          "text-size": 13,
+          "text-size": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            8,
+            11,
+            10,
+            13,
+            12,
+            16,
+            14,
+            20,
+          ],
           "text-offset": [0, 1.95],
           "text-anchor": "top",
         },

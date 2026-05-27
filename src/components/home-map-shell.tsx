@@ -45,6 +45,7 @@ export function HomeMapShell({ initialLocalities }: HomeMapShellProps) {
 
   function handleClosePanel() {
     setIsPanelOpen(false);
+    setSelectedLocalityId(null);
   }
 
   return (
