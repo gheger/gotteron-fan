@@ -1,5 +1,5 @@
 import { execFile as execFileCallback } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -131,7 +131,9 @@ async function downloadFile(url, destinationPath) {
 }
 
 async function readShapefile(filePath) {
-  const source = await shapefile.open(filePath);
+  const source = await shapefile.open(filePath, undefined, {
+    encoding: await getShapefileEncoding(filePath),
+  });
   const features = [];
 
   while (true) {
@@ -143,6 +145,22 @@ async function readShapefile(filePath) {
 
     features.push(result.value);
   }
+}
+
+async function getShapefileEncoding(filePath) {
+  const cpgPath = filePath.replace(/\.shp$/i, ".cpg");
+
+  try {
+    const codePage = (await readFile(cpgPath, "utf8")).trim();
+
+    if (codePage.length > 0) {
+      return codePage.toLowerCase();
+    }
+  } catch {
+    // Fall back to UTF-8 because the official swisstopo archive declares UTF-8.
+  }
+
+  return "utf-8";
 }
 
 function transformGeometry(geometry) {

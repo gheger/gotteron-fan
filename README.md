@@ -20,6 +20,9 @@ Implemented:
 - PostgreSQL/PostGIS local development with Docker Compose
 - official swisstopo locality import into PostGIS for the map dataset
 - swisstopo raster basemap plus DB-backed official locality perimeters on the homepage
+- locality selection keeps the current map zoom and only toggles polygon highlight
+- higher-contrast locality overlays and count badges over the basemap
+- UTF-8-safe locality import so official names keep accents and diacritics correctly
 
 Current limitations:
 
@@ -94,6 +97,7 @@ npm run db:import-localities
 ```
 
 This downloads the official swisstopo locality shapefile, resolves Swiss canton codes, and upserts the locality geometry into `localities`.
+It also preserves accented official locality names using the shapefile encoding metadata.
 
 ### 7. Start the app
 
@@ -169,6 +173,13 @@ npm run build
 npm run prisma:validate
 docker compose config
 ```
+
+Recent validation done in this repo:
+
+- `npm run lint`
+- `npm run build`
+- Turnstile enforcement verified with rejected empty and invalid tokens
+- official locality import re-run and checked for mojibake regressions in accented names
 
 ## Project Structure
 

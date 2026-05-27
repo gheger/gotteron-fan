@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 import maplibregl, { type GeoJSONSource, type Map } from "maplibre-gl";
 import {
   buildLocalityCenterCollection,
@@ -47,6 +47,19 @@ export function LocalityMap({
 }: LocalityMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<Map | null>(null);
+  const localitiesRef = useRef(localities);
+  const selectedLocalityIdRef = useRef(selectedLocalityId);
+  const handleSelectLocality = useEffectEvent((localityId: string) => {
+    onSelectLocality(localityId);
+  });
+
+  useEffect(() => {
+    localitiesRef.current = localities;
+  }, [localities]);
+
+  useEffect(() => {
+    selectedLocalityIdRef.current = selectedLocalityId;
+  }, [selectedLocalityId]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) {
@@ -70,9 +83,12 @@ export function LocalityMap({
       ]);
 
     map.on("load", () => {
+      const initialLocalities = localitiesRef.current;
+      const initialSelectedLocalityId = selectedLocalityIdRef.current ?? "";
+
       map.addSource("locality-polygons", {
         type: "geojson",
-        data: buildLocalityPolygonCollection(localities),
+        data: buildLocalityPolygonCollection(initialLocalities),
       });
 
       map.addLayer({
@@ -82,16 +98,16 @@ export function LocalityMap({
         paint: {
           "fill-color": [
             "case",
-            ["==", ["get", "id"], selectedLocalityId ?? ""],
-            "rgba(185, 28, 28, 0.62)",
-            "rgba(23, 37, 84, 0.28)",
+            ["==", ["get", "id"], initialSelectedLocalityId],
+            "rgba(153, 27, 27, 0.82)",
+            "rgba(15, 23, 42, 0.48)",
           ],
           "fill-outline-color": "rgba(255,255,255,0.0)",
           "fill-opacity": [
             "case",
-            ["==", ["get", "id"], selectedLocalityId ?? ""],
-            0.72,
-            0.46,
+            ["==", ["get", "id"], initialSelectedLocalityId],
+            0.88,
+            0.62,
           ],
         },
       });
@@ -103,22 +119,22 @@ export function LocalityMap({
         paint: {
           "line-color": [
             "case",
-            ["==", ["get", "id"], selectedLocalityId ?? ""],
-            "rgba(255,255,255,0.96)",
-            "rgba(15,23,42,0.55)",
+            ["==", ["get", "id"], initialSelectedLocalityId],
+            "rgba(255,255,255,1)",
+            "rgba(255,255,255,0.78)",
           ],
           "line-width": [
             "case",
-            ["==", ["get", "id"], selectedLocalityId ?? ""],
-            3,
-            1.6,
+            ["==", ["get", "id"], initialSelectedLocalityId],
+            3.8,
+            2.2,
           ],
         },
       });
 
       map.addSource("locality-centers", {
         type: "geojson",
-        data: buildLocalityCenterCollection(localities),
+        data: buildLocalityCenterCollection(initialLocalities),
       });
 
       map.addLayer({
@@ -126,10 +142,10 @@ export function LocalityMap({
         type: "circle",
         source: "locality-centers",
         paint: {
-          "circle-radius": ["interpolate", ["linear"], ["get", "fanCount"], 40, 9, 200, 16],
-          "circle-color": "rgba(255,255,255,0.92)",
-          "circle-stroke-width": 1.5,
-          "circle-stroke-color": "rgba(15,23,42,0.14)",
+          "circle-radius": ["interpolate", ["linear"], ["get", "fanCount"], 40, 10, 200, 18],
+          "circle-color": "rgba(15,23,42,0.96)",
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "rgba(255,255,255,0.9)",
         },
       });
 
@@ -140,10 +156,12 @@ export function LocalityMap({
         layout: {
           "text-field": ["to-string", ["get", "fanCount"]],
           "text-font": ["Noto Sans Regular"],
-          "text-size": 11,
+          "text-size": 12,
         },
         paint: {
-          "text-color": "#0f172a",
+          "text-color": "#ffffff",
+          "text-halo-color": "rgba(15,23,42,0.72)",
+          "text-halo-width": 0.75,
         },
       });
 
@@ -154,14 +172,14 @@ export function LocalityMap({
         layout: {
           "text-field": ["get", "name"],
           "text-font": ["Noto Sans Regular"],
-          "text-size": 12,
-          "text-offset": [0, 1.7],
+          "text-size": 13,
+          "text-offset": [0, 1.95],
           "text-anchor": "top",
         },
         paint: {
-          "text-color": "#0f172a",
-          "text-halo-color": "rgba(255,255,255,0.86)",
-          "text-halo-width": 1,
+          "text-color": "#ffffff",
+          "text-halo-color": "rgba(15,23,42,0.92)",
+          "text-halo-width": 1.6,
         },
       });
 
@@ -170,7 +188,7 @@ export function LocalityMap({
         const localityId = feature?.properties?.id;
 
         if (typeof localityId === "string") {
-          onSelectLocality(localityId);
+          handleSelectLocality(localityId);
         }
       });
 
@@ -187,7 +205,7 @@ export function LocalityMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [localities, onSelectLocality, selectedLocalityId]);
+  }, []);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -215,43 +233,28 @@ export function LocalityMap({
     map.setPaintProperty("locality-fill", "fill-color", [
       "case",
       ["==", ["get", "id"], activeLocalityId],
-      "rgba(185, 28, 28, 0.62)",
-      "rgba(23, 37, 84, 0.28)",
+      "rgba(153, 27, 27, 0.82)",
+      "rgba(15, 23, 42, 0.48)",
     ]);
     map.setPaintProperty("locality-fill", "fill-opacity", [
       "case",
       ["==", ["get", "id"], activeLocalityId],
-      0.72,
-      0.46,
+      0.88,
+      0.62,
     ]);
     map.setPaintProperty("locality-outline", "line-color", [
       "case",
       ["==", ["get", "id"], activeLocalityId],
-      "rgba(255,255,255,0.96)",
-      "rgba(15,23,42,0.55)",
+      "rgba(255,255,255,1)",
+      "rgba(255,255,255,0.78)",
     ]);
     map.setPaintProperty("locality-outline", "line-width", [
       "case",
       ["==", ["get", "id"], activeLocalityId],
-      3,
-      1.6,
+      3.8,
+      2.2,
     ]);
-
-    const selectedLocality = localities.find(
-      (locality) => locality.id === selectedLocalityId,
-    );
-
-    if (!selectedLocality) {
-      return;
-    }
-
-    map.flyTo({
-      center: selectedLocality.coordinates,
-      zoom: 10.2,
-      duration: 900,
-      essential: true,
-    });
-  }, [localities, selectedLocalityId]);
+  }, [selectedLocalityId]);
 
   useEffect(() => {
     const map = mapRef.current;
